@@ -45,3 +45,14 @@ depthToRGBA =
 blackRGBA :: RGBA
 blackRGBA = I.fromFunction (Z :. 480 :. 640) (const (RGBAPixel 0 0 0 0))
 ```
+
+# Sample Images
+
+Depth test image of my boring living room.  See my cat everyone?  SEE MY CAT
+EVERYONE!
+
+![My Cat...](examples/livingroom.jpg)
+
+Psychedelic Outlines (done for a birthday):
+
+![hello](examples/hello.jpg)
