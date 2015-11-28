@@ -7,6 +7,11 @@ Mellow is a Haskell library providing a layer over
 depth information from an X-Box Kinect (360), applies the user-provided image
 transformation, and renders the image to screen.
 
+
+N.B. Mellow is likey not an ideal platform for high-performance uses but is
+intended to be simple enough for fun toys and motivating educational
+demonstrations.
+
 The main routine is `mellow state0 update render eventHandler` where `state0` is
 the initial state, update will update the state with a new frame, `render` will
 rasterize a given state for display to screen, and `eventHandler` is useful for
