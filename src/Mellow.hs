@@ -5,6 +5,7 @@ module Mellow
   ( -- * Types
     MellowCfg(..)
   , Depth
+  , Display(..)
   , defaultCfg
     -- * Main Interface
   , mellow, mellowWith
@@ -38,7 +39,7 @@ import Graphics.Gloss.Interface.IO.Game
 
 data MellowCfg s =
       MellowCfg { world           :: s
-                , resolution      :: (Int,Int)
+                , resolution      :: Display
                 , backgroundColor :: Color
                 , framerate       :: Int
                 , updateOp        :: Depth -> s -> IO s
@@ -51,7 +52,7 @@ defaultCfg :: s                         -- ^ Initial state
            -> (s -> IO RGBA)            -- ^ Render state into an RGBA image
            -> (Event -> s -> IO s)      -- ^ Event handler
            -> MellowCfg s
-defaultCfg s = MellowCfg s (640,480) black 20
+defaultCfg s = MellowCfg s (InWindow "Mellow" (640,480) (200,200)) black 20
 
 mellowWith :: MellowCfg s -> IO ()
 mellowWith (MellowCfg {..}) = do
@@ -69,7 +70,7 @@ mellowWith (MellowCfg {..}) = do
                 do i <- rdImg
                    modifyMVar_ worldRef (updateOp i)
 
-  playIO ({- FullScreen -} InWindow "Test" resolution (500,0)) backgroundColor framerate ()
+  playIO resolution backgroundColor framerate ()
          (const $ readMVar worldRef >>= (fmap toPicture . renderOp))
          (\e () -> modifyMVar_ worldRef $ eventOp e)
          (const return)
