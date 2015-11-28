@@ -12,6 +12,10 @@ description:         Mellow provides an easy interface that connects the
                      Mellow is likey not an ideal platform for high-performance
                      uses but is intended to be simple enough for fun toys and
                      motivating educational demonstrations.
+
+                     WARNING: Always compile your freenect programs with
+                     @-threaded@.  Failure to use threaded will result in tears
+                     of regret.
 homepage:            https://github.com/TomMD/mellow
 license:             BSD3
 license-file:        LICENSE

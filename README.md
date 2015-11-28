@@ -1,3 +1,24 @@
+# Introduction
+
+Mellow is a layer over [freenect](https://github.com/chrisdone/freenect),
+[friday](https://github.com/RaphaelJ/friday), and
+[gloss](http://gloss.ouroborus.net/).  That is, Mellow acquires frames of 11-bit depth
+information, applies the user-provided image transformation, and renders the
+image to screen.
+
+# Example
+
+In under 20 lines we can get a pretty little OpenGL colored rendering of the
+depth map.  The basic steps are:
+
+1. Import Mellow and 'friday'.  Import 'gloss' as needed.
+2. Call 'mellow' with desired call backs for receiving a new frame into your
+   state, rendering the state, and handling keyboard events (see 'gloss'
+   documentation for keyboard events).
+3. Define your callback that transforms pixels of type @Word16@ into RGBA pixels
+   using whatever techniques you desire (see the 'friday' library).
+
+```
 {-# LANGUAGE MultiWayIf #-}
 import Mellow                   -- The main 'Mellow' module
 import Vision.Image as I        -- The Friday library for image manipulation
@@ -23,3 +44,4 @@ depthToRGBA =
 
 blackRGBA :: RGBA
 blackRGBA = I.fromFunction (Z :. 480 :. 640) (const (RGBAPixel 0 0 0 0))
+```
