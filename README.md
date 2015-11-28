@@ -1,10 +1,16 @@
 # Introduction
 
-Mellow is a layer over [freenect](https://github.com/chrisdone/freenect),
+Mellow is a Haskell library providing a layer over
+[freenect](https://github.com/chrisdone/freenect),
 [friday](https://github.com/RaphaelJ/friday), and
-[gloss](http://gloss.ouroborus.net/).  That is, Mellow acquires frames of 11-bit depth
-information, applies the user-provided image transformation, and renders the
-image to screen.
+[gloss](http://gloss.ouroborus.net/).  That is, Mellow acquires frames of 11-bit
+depth information from an X-Box Kinect (360), applies the user-provided image
+transformation, and renders the image to screen.
+
+The main routine is `mellow state0 update render eventHandler` where `state0` is
+the initial state, update will update the state with a new frame, `render` will
+rasterize a given state for display to screen, and `eventHandler` is useful for
+key presses and other inputs.
 
 # Example
 
