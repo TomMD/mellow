@@ -1,10 +1,16 @@
 {-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE MultiWayIf         #-}
 module Mellow
-  ( Config(..)
-  , MellowCfg(..)
+  ( -- * Types
+    MellowCfg(..)
+  , Depth
   , defaultCfg
-  , depthToRGBA
+    -- * Main Interface
+  , mellow, mellowWith
+  , defaultEventHandler
+    -- * Friday re-exports
+  , Z(..), shape, (:.)(..), DIM2
   ) where
 
 import Vision.Freenect as Freenect
@@ -27,50 +33,53 @@ import Foreign.Storable ()
 
 import Codec.Picture.Saving (imageToJpg)
 import Codec.Picture (DynamicImage(..))
-import Vision.Image.JuicyPixels (toJuicyRGBA, toFridayRGBA)
 import Graphics.Gloss.Juicy (fromImageRGBA8)
 import Graphics.Gloss.Interface.IO.Game
 
-depthToRGBA :: Depth -> RGBA
-depthToRGBA d = I.fromFunction (shape d) (\p -> let val = floor $ 255.0 * (fromIntegral (d!p) / 2047)
-                                                  in RGBAPixel val val val 255)
-
-framePeriodMicroSec :: Int
-framePeriodMicroSec = 100000
-
 data MellowCfg s =
-      MellowCfg { state0     :: s
-                , resolution :: (Int,Int)
+      MellowCfg { world           :: s
+                , resolution      :: (Int,Int)
                 , backgroundColor :: Color
+                , framerate       :: Int
+                , updateOp        :: Depth -> s -> IO s
+                , renderOp        :: s -> IO RGBA
+                , eventOp         :: Event -> s -> IO s
                 }
 
-defaultCfg :: s -> MellowCfg s
-defaultCfg s = MellowCfg s (640,480) black
+defaultCfg :: s                         -- ^ Initial state
+           -> (Depth -> s -> IO s)      -- ^ Integrate new depth frame
+           -> (s -> IO RGBA)            -- ^ Render state into an RGBA image
+           -> (Event -> s -> IO s)      -- ^ Event handler
+           -> MellowCfg s
+defaultCfg s = MellowCfg s (640,480) black 20
+
+mellowWith :: MellowCfg s -> IO ()
+mellowWith (MellowCfg {..}) = do
+  ref        <- newEmptyMVar :: IO (MVar Depth)
+  worldRef   <- newMVar world
+  let rdImg   = takeMVar ref
+      wtImg x = tryPutMVar ref x >> return ()
+
+  -- Start a thread reading frames.
+  _ <- forkIO $ withKinect (\_ i -> do wtImg i
+                                       return ())
+
+  -- Start a thread that updates the state with each frame.
+  _ <- forkIO $ forever $
+                do i <- rdImg
+                   modifyMVar_ worldRef (updateOp i)
+
+  playIO ({- FullScreen -} InWindow "Test" resolution (500,0)) backgroundColor framerate ()
+         (const $ readMVar worldRef >>= (fmap toPicture . renderOp))
+         (\e () -> modifyMVar_ worldRef $ eventOp e)
+         (const return)
 
 -- | @mellow state0 updateOp renderOp keyPress@ will continually call
 -- updateOp with each new frame from a Kinect, call @renderOp@ to render
 -- the frame using Gloss, and @keyPress@ to handle key presses.
 mellow :: s -> (Depth -> s -> IO s) -> (s -> IO RGBA) -> (Event -> s -> IO s) -> IO ()
-mellow world updateOp renderOp keyPress = do
-  ref        <- newEmptyMVar :: IO (MVar Depth)
-  worldRef   <- newMVar world
-  let rdImg   = takeMVar ref
-      wtImg x = tryPutMVar ref x
-
-  -- Start a thread reading frames.
-  forkIO $ withKinect (\_ i -> do threadDelay framePeriodMicroSec
-                                  wtImg i
-                                  return ())
-
-  -- Start a thread that updates the state with each frame.
-  forkIO $ forever $
-            do i <- rdImg
-               modifyMVar_ worldRef (updateOp i)
-
-  playIO (FullScreen (640,480)) black 10 ()
-         (const $ readMVar worldRef >>= (fmap toPicture . renderOp))
-         (\e () -> modifyMVar_ worldRef $ keyPress e)
-         (const return)
+mellow world updateOp renderOp keyPress =
+  mellowWith (defaultCfg world updateOp renderOp keyPress)
 
 toPicture :: RGBA -> Picture
 toPicture = fromImageRGBA8 . toJuicyRGBA
@@ -79,11 +88,12 @@ toPicture = fromImageRGBA8 . toJuicyRGBA
 -- Example handle event:
 --   * 'esc' quit
 --   * 's' save the frame
-defaultEventHandler :: Event -> Float -> s -> (s -> RGBA) -> IO s
-defaultEventHandler (EventKey (SpecialKey KeyEsc) _ _ _) _ _ _ = exitSuccess
-defaultEventHandler (EventKey (Char 's') Down _ _) t st rend =
-  do let jpg = toJuicyRGBA $ rend st
-         bs  = imageToJpg 98 (ImageRGBA8 jpg)
+defaultEventHandler :: (s -> IO RGBA) -> Event -> s -> IO s
+defaultEventHandler _ (EventKey (SpecialKey KeyEsc) _ _ _) _ = exitSuccess
+defaultEventHandler rend (EventKey (Char 's') Down _ _) st =
+  do jpg <- toJuicyRGBA <$> rend st
+     let bs = imageToJpg 98 (ImageRGBA8 jpg)
+     t <- getCurrentTime
      Lazy.writeFile (show t ++ ".jpg") bs
      return st
-defaultEventHandler _ _ st _ = return st
+defaultEventHandler _ _ st = return st
