@@ -1,0 +1,3 @@
+packages: .
+          ./friday-freenect
+          ./friday-juicypixels
