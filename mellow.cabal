@@ -31,15 +31,15 @@ library
   exposed-modules:     Mellow
   -- other-modules:       
   other-extensions:    BangPatterns, RecordWildCards
-  build-depends:       base >=4.8 && <4.9,
+  build-depends:       base >=4.8 && <5,
                        bytestring >= 0.10 && < 11,
                        friday >=0.2 && <0.3,
                        friday-freenect >=0.1 && <0.2,
                        friday-juicypixels >=0.1 && <0.2,
                        gloss-juicy >=0.2 && <0.3,
-                       gloss >=1.9 && <1.10,
-                       time >=1.5 && <1.6,
-                       vector >=0.11 && <0.12,
+                       gloss >=1.11 && <1.12,
+                       time >=1.5 && <1.10,
+                       vector >=0.11 && <0.14,
                        deepseq >=1.4 && <1.5,
                        JuicyPixels >= 3.2 && < 3.3
   hs-source-dirs:      src

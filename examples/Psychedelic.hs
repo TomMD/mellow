@@ -16,7 +16,7 @@ import Data.Time
 import Data.Char (isSpace)
 import Data.Maybe (listToMaybe)
 import Data.Word
-import Vision.Image.Storage.DevIL -- requires friday-devil too
+-- import Vision.Image.Storage.DevIL -- requires friday-devil too
 import Control.Concurrent.MVar
 import qualified Data.Vector.Storable as V
 import System.IO
@@ -26,9 +26,6 @@ import Control.DeepSeq
 import Vision.Image.JuicyPixels (toJuicyRGBA, toFridayRGBA)
 import Graphics.Gloss.Juicy (fromImageRGBA8)
 import Graphics.Gloss.Interface.IO.Game
-
-debug :: String -> IO ()
-debug = hPutStrLn stderr
 
 -- | The world consists of the psycState and a render method.  The
 -- PsycState includes the wacky frame, input frame, processing frames,
@@ -119,13 +116,12 @@ zipImage f a b = fromFunction (shape a) (\p -> f (a ! p) (b ! p))
 --   * 'i' display input image
 --   * 'o' display outline image
 handleEvent :: Event -> World -> IO World
-handleEvent (EventKey (SpecialKey KeyEsc) _ _ _) st = -- Quit
-  debug "Exiting." >> exitSuccess
+handleEvent (EventKey (SpecialKey KeyEsc) _ _ _) st = exitSuccess
 handleEvent (EventKey (Char 's') Down _ _) st =
-  do now <- getCurrentTime
-     let nowString = filter (not . isSpace) (show now)
-     _ <- save JPG (nowString ++ ".jpg") (render st)
-     putStrLn $ "Saved " ++ show now
+  do -- now <- getCurrentTime
+     -- let nowString = filter (not . isSpace) (show now)
+     -- if Devil is imported _ <- save JPG (nowString ++ ".jpg") (render st)
+     -- putStrLn $ "Saved " ++ show now
      return st
 handleEvent (EventKey (Char 'i') Down _ _) st = return st { renderMethod = renderInput    }
 handleEvent (EventKey (Char 'o') Down _ _) st = return st { renderMethod = renderOutlines }
@@ -151,6 +147,7 @@ data PsycState inImg
             , colors        :: [RGBAPixel]          -- Infinite list of colors for drawing
             }
 
+-- The state retains N frames, each new frame is given the next color in the list.
 defaultColors :: [RGBAPixel]
 defaultColors = cycle [RGBAPixel 0x3f 0x63 0xad 0xff
                       ,RGBAPixel 0x40 0x64 0xae 0xff

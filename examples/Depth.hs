@@ -14,12 +14,14 @@ main =
 depthToRGBA :: Depth -> RGBA
 depthToRGBA =
   I.map                 -- Friday image manipulation map operation
-      (\val -> RGBAPixel (oper val 0 950) (oper val 800 1200) (oper val 1000 2100) 255)
-  where oper v n x =
-          let v' | v > x = 0
-                 | v < n = 0
-                 | otherwise = fromIntegral (v - n)
-          in floor $ 255 * (v' / 700 :: Double)
+      (\val ->
+          let r = norm True  (fromIntegral (val-200) / 800)
+              g = norm True  (fromIntegral (500 + abs (val-700)) / 1000)
+              b = norm False (fromIntegral (val - 900) / 1000)
+          in RGBAPixel r g b 255)
+  where
+   norm b = floor . (255 *) . (if b then (1 - ) else id) . max 0 . min one
+   one    = 1 :: Double
 
 blackRGBA :: RGBA
 blackRGBA = I.fromFunction (Z :. 480 :. 640) (const (RGBAPixel 0 0 0 0))
